@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-test
+spec:
+  replicas: {{.Values.replicas}}
+  selector:
+    matchLabels:
+      app: argocd-test
+  template:
+    metadata:
+      labels:
+        app: argocd-test
+    spec:
+      containers:
+        - image: geoffreydv/argocd-test-app:1.0-SNAPSHOT
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 5
+          env:
+            - name: TZ
+              value: "Europe/Brussels"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 512Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+          name: argocd-test
+          ports:
+            - containerPort: 8080
+              name: spring-port
+          volumeMounts:
+            - name: tz-config
+              mountPath: /etc/localtime
+      volumes:
+        - name: tz-config
+          hostPath:
+            path: /usr/share/zoneinfo/Europe/Brussels
