@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+  {{- include "app.labels" . | nindent 4 }}
+  name: {{ include "app.fullname" . }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "app.name" . }}
+    spec:
+      serviceAccountName: {{ include "app.name" . }}
+      priorityClassName: high-priority
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ include "app.name" . }}
+                topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: {{ .Values.image.fullName }}
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 5
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.spring.profile }}
+            - name: TZ
+              value: "Europe/Brussels"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 512Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+          name: {{ include "app.name" . }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+              name: spring-port
+          volumeMounts:
+            - name: tz-config
+              mountPath: /etc/localtime
+      volumes:
+        - name: tz-config
+          hostPath:
+            path: /usr/share/zoneinfo/Europe/Brussels
