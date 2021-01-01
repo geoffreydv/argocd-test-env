@@ -1,51 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-  {{- include "app.labels" . | nindent 4 }}
-  name: {{ include "app.fullname" . }}
+  name: argocd-test
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: {{ include "app.name" . }}
+      app: argocd-test
   template:
     metadata:
       labels:
-        app: {{ include "app.name" . }}
+        app: argocd-test
     spec:
-      serviceAccountName: {{ include "app.name" . }}
-      priorityClassName: high-priority
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - {{ include "app.name" . }}
-                topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: {{ .Values.image.fullName }}
+        - image: geoffreydv/argocd-test-app:1.0-SNAPSHOT
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.service.port }}
+              port: 8080
             initialDelaySeconds: 60
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.service.port }}
+              port: 8080
             initialDelaySeconds: 60
             periodSeconds: 5
           env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: {{ .Values.spring.profile }}
             - name: TZ
               value: "Europe/Brussels"
           resources:
@@ -55,9 +37,9 @@ spec:
             limits:
               cpu: "500m"
               memory: 512Mi
-          name: {{ include "app.name" . }}
+          name: argocd-test
           ports:
-            - containerPort: {{ .Values.service.internalPort }}
+            - containerPort: 8080
               name: spring-port
           volumeMounts:
             - name: tz-config
