@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: argocd-test-helm
+  name: argocd-test-helm-{{.Values.environmentSuffix}}
 spec:
   replicas: {{.Values.replicas}}
   selector:
     matchLabels:
-      app: argocd-test-helm
+      app: argocd-test-helm-{{.Values.environmentSuffix}}
   template:
     metadata:
       labels:
-        app: argocd-test-helm
+        app: argocd-test-helm-{{.Values.environmentSuffix}}
     spec:
       containers:
         - image: geoffreydv/argocd-test-app:1.0-SNAPSHOT
@@ -37,7 +37,7 @@ spec:
             limits:
               cpu: "500m"
               memory: 512Mi
-          name: argocd-test-helm
+          name: argocd-test-helm-{{.Values.environmentSuffix}}
           ports:
             - containerPort: 8080
               name: spring-port
